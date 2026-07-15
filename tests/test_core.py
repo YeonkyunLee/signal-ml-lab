@@ -39,6 +39,15 @@ def test_metrics_perfect_reconstruction():
     assert np.isinf(metrics.snr_db(clean, clean))
 
 
+def test_synth_variant_differs():
+    _, base = synth.synth_ecg(duration_s=5.0, fs=360, hr_bpm=75, seed=0)
+    _, var = synth.synth_ecg_variant(duration_s=5.0, fs=360, hr_bpm=75, seed=0)
+    assert base.shape == var.shape
+    assert np.all(np.isfinite(var))
+    # 형태가 실제로 다른 분포여야 함
+    assert metrics.rmse(base, var) > 0.05
+
+
 def test_dataset_shapes_and_split():
     clean, noisy = dataset.make_windows(20, win_len=256, seed=0)
     assert clean.shape == (20, 256) == noisy.shape
