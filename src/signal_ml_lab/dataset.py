@@ -55,6 +55,48 @@ def make_windows(
     return clean_list, noisy_list
 
 
+def make_mixed_windows(
+    n_windows: int,
+    win_len: int = 1024,
+    fs: int = 360,
+    variant_frac: float = 0.5,
+    noise_scale_range: tuple[float, float] = (0.5, 1.5),
+    seed: int = 0,
+) -> tuple[np.ndarray, np.ndarray]:
+    """원분포 + 변형분포를 섞어 (clean, noisy) 쌍을 만든다.
+
+    도메인 시프트 완화(혼합 학습) 실험용. variant_frac 만큼 변형 형태를 포함.
+    """
+    from .noise import add_noise
+    from .synth import synth_ecg, synth_ecg_variant
+
+    rng = np.random.default_rng(seed)
+    clean_list = np.empty((n_windows, win_len), dtype=np.float32)
+    noisy_list = np.empty((n_windows, win_len), dtype=np.float32)
+    gen_len = win_len + 2 * fs
+    dur = gen_len / fs
+
+    for i in range(n_windows):
+        hr = rng.uniform(50, 100)
+        ns = rng.uniform(*noise_scale_range)
+        use_variant = rng.random() < variant_frac
+        gen = synth_ecg_variant if use_variant else synth_ecg
+        _, clean = gen(duration_s=dur, fs=fs, hr_bpm=hr, seed=int(rng.integers(1 << 30)))
+        noisy = add_noise(
+            clean,
+            fs=fs,
+            baseline_amp=0.30 * ns,
+            powerline_amp=0.10 * ns,
+            emg_amp=0.05 * ns,
+            seed=int(rng.integers(1 << 30)),
+        )
+        off = int(rng.integers(0, clean.size - win_len))
+        clean_list[i] = clean[off : off + win_len]
+        noisy_list[i] = noisy[off : off + win_len]
+
+    return clean_list, noisy_list
+
+
 def split(
     clean: np.ndarray, noisy: np.ndarray, val_frac: float = 0.15, test_frac: float = 0.15
 ) -> dict[str, tuple[np.ndarray, np.ndarray]]:

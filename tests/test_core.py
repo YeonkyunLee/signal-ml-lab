@@ -48,6 +48,12 @@ def test_synth_variant_differs():
     assert metrics.rmse(base, var) > 0.05
 
 
+def test_mixed_windows_shapes():
+    clean, noisy = dataset.make_mixed_windows(16, win_len=256, variant_frac=0.5, seed=0)
+    assert clean.shape == (16, 256) == noisy.shape
+    assert np.all(np.isfinite(clean)) and np.all(np.isfinite(noisy))
+
+
 def test_dataset_shapes_and_split():
     clean, noisy = dataset.make_windows(20, win_len=256, seed=0)
     assert clean.shape == (20, 256) == noisy.shape
