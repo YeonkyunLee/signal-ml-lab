@@ -1,0 +1,6 @@
+numpy>=1.24
+scipy>=1.10
+matplotlib>=3.7
+# optional: real PhysioNet records and wavelet denoising
+wfdb>=4.1
+PyWavelets>=1.4
