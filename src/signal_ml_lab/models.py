@@ -16,9 +16,12 @@ class DnCNN1D(nn.Module):
     입력/출력: (batch, 1, length). forward는 깨끗한 신호 추정을 반환한다.
     """
 
-    def __init__(self, depth: int = 8, channels: int = 32, kernel: int = 9):
+    def __init__(
+        self, depth: int = 8, channels: int = 32, kernel: int = 9, dropout: float = 0.0
+    ):
         super().__init__()
         pad = kernel // 2
+        self.dropout = dropout
         layers: list[nn.Module] = [
             nn.Conv1d(1, channels, kernel, padding=pad),
             nn.ReLU(inplace=True),
@@ -29,6 +32,9 @@ class DnCNN1D(nn.Module):
                 nn.BatchNorm1d(channels),
                 nn.ReLU(inplace=True),
             ]
+            if dropout > 0:
+                # MC-dropout: 추론 시에도 켜서 예측 분산(불확실도)을 얻는다
+                layers += [nn.Dropout(dropout)]
         layers += [nn.Conv1d(channels, 1, kernel, padding=pad)]
         self.net = nn.Sequential(*layers)
 

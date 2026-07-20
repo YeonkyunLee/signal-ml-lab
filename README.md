@@ -76,6 +76,25 @@ Train on both morphologies and generalization recovers.
 - Takeaway: *robustness is set by how well the training distribution covers reality,
   more than by architecture.*
 
+## Knowing when it's wrong — uncertainty as a safety gate
+
+The domain-shift failure above was dangerous because it was **silent**. Can the
+model flag its own OOD inputs? Two methods, one test (in-dist vs. variant):
+
+| method | OOD AUROC | detection @5% FPR |
+|--------|----------:|------------------:|
+| MC-dropout | 0.58 | 9% |
+| **deep ensemble (K=4)** | **0.90** | **50%** |
+
+- **MC-dropout barely beats chance** — dropout uncertainty is blind to this subtle,
+  locally-plausible shift.
+- **A deep ensemble's disagreement flags it** (AUROC 0.90). Members trained from
+  different seeds agree in-distribution but diverge on unfamiliar morphology.
+- Practical takeaway: pair the denoiser with an ensemble gate; route high-disagreement
+  windows to classical DSP or human review. The "clean but wrong" output becomes catchable.
+
+![uncertainty](assets/07_uncertainty.png)
+
 ## Edge deployability (embedded)
 
 Can the denoiser run in real time? (`scripts/06_edge_profile.py`, single thread)
@@ -128,8 +147,8 @@ blog/           write-ups (KR)
 - [x] DnCNN1D ML denoiser + training pipeline
 - [x] Classical-vs-ML benchmark, domain-shift study, mixed-training fix
 - [x] Edge profile, unit tests
+- [x] Uncertainty as OOD safety gate (deep ensemble, AUROC 0.90)
 - [ ] Evaluate on real PhysioNet records (`wfdb`)
-- [ ] Uncertainty estimation to flag OOD outputs
 - [ ] int8 static quantization + on-device benchmark
 
 ## License

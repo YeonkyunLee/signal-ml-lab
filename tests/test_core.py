@@ -39,6 +39,14 @@ def test_metrics_perfect_reconstruction():
     assert np.isinf(metrics.snr_db(clean, clean))
 
 
+def test_auroc_separation():
+    rng = np.random.default_rng(0)
+    neg = rng.normal(0, 1, 500)
+    pos = rng.normal(3, 1, 500)  # 확실히 더 큰 분포
+    assert metrics.auroc(pos, neg) > 0.95
+    assert abs(metrics.auroc(neg, neg) - 0.5) < 0.05  # 같은 분포면 ~0.5
+
+
 def test_synth_variant_differs():
     _, base = synth.synth_ecg(duration_s=5.0, fs=360, hr_bpm=75, seed=0)
     _, var = synth.synth_ecg_variant(duration_s=5.0, fs=360, hr_bpm=75, seed=0)
