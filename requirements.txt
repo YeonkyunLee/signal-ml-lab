@@ -4,3 +4,4 @@ matplotlib>=3.7
 # optional: real PhysioNet records and wavelet denoising
 wfdb>=4.1
 PyWavelets>=1.4
+truststore>=0.9  # corporate-proxy CA (Windows cert store) for wfdb over HTTPS

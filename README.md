@@ -21,8 +21,11 @@ No proprietary data or algorithms from any company are included.
 2. A small 1D CNN (**DnCNN**) beats it by **10–15 dB** in-distribution.
 3. On **out-of-distribution** ECG the ML model **collapses** and silently distorts
    clinically important morphology — while classical stays robust.
-4. **Mixed-distribution training** buys the robustness back (a small in-dist cost).
-5. The model is tiny (**220 KB**, **1161× real-time** on one CPU core) → edge-deployable.
+4. On **real MIT-BIH data + real noise**, the synthetic-trained model transfers
+   *below classical* — but trained on real data it wins by ~2.8 dB (the sim-to-real gap).
+5. **Mixed-distribution training** buys robustness back; a **deep-ensemble gate**
+   (AUROC 0.90) flags OOD inputs so bad outputs are catchable.
+6. The model is tiny (**220 KB**, **1161× real-time** on one CPU core) → edge-deployable.
 
 ## Results (synthetic test set, SNR sweep)
 
@@ -39,6 +42,28 @@ No proprietary data or algorithms from any company are included.
 - Wavelet thresholding adds almost nothing over bandpass+notch for this noise model.
 
 ![benchmark](assets/03_benchmark_snr.png)
+
+## Real data — the sim-to-real gap (capstone)
+
+The synthetic story above is only convincing if it survives real signals. Test set:
+**real MIT-BIH ECG** (ground truth) + **real NSTDB noise** (baseline wander, muscle
+artifact, electrode motion) added at controlled SNR (`scripts/08_real_data.py`).
+
+| method | output SNR | gain |
+|--------|-----------:|-----:|
+| noisy input | 2.83 dB | — |
+| classical (bp+notch) | 6.70 dB | +3.87 |
+| **ML (synthetic-trained)** | 4.09 dB | +1.26 |
+| **ML (real-trained)** | **9.45 dB** | **+6.62** |
+
+- The **synthetic-trained model transfers poorly** — it scores *below classical* on
+  real data (4.09 < 6.70 dB) and overshoots R-peaks, imposing its synthetic prior.
+  The generalization tax, now confirmed on **real signals**, not just a synthetic variant.
+- **Trained on real data, ML wins clearly** (9.45 dB, +2.8 over classical).
+- Lesson: sim-to-real is a real gap. A model is only as good as the realism of its
+  training distribution — architecture doesn't rescue a distribution mismatch.
+
+![real data](assets/08_real_data.png)
 
 ## Domain shift — the ML trap
 
@@ -121,9 +146,13 @@ python scripts/03_benchmark.py                         # classical vs ML sweep
 python scripts/04_domain_shift.py                      # OOD generalization test
 python scripts/05_mixed_training.py                    # recover robustness
 python scripts/06_edge_profile.py                      # latency / footprint
+python scripts/07_uncertainty.py                       # ensemble OOD safety gate
+python scripts/08_real_data.py --train-real            # real MIT-BIH + NSTDB noise
 
 pytest -q
 ```
+`08` downloads real PhysioNet data via `wfdb`. Behind a corporate TLS proxy, install
+`truststore` (auto-used by `realdata.py`) so HTTPS trusts the Windows cert store.
 Figures/tables go to `outputs/`, metrics print to the console.
 
 ## Layout
@@ -148,7 +177,8 @@ blog/           write-ups (KR)
 - [x] Classical-vs-ML benchmark, domain-shift study, mixed-training fix
 - [x] Edge profile, unit tests
 - [x] Uncertainty as OOD safety gate (deep ensemble, AUROC 0.90)
-- [ ] Evaluate on real PhysioNet records (`wfdb`)
+- [x] Real-data validation: MIT-BIH ECG + NSTDB noise (sim-to-real gap quantified)
+- [ ] Fine-tune synthetic→real (domain adaptation) vs train-from-scratch
 - [ ] int8 static quantization + on-device benchmark
 
 ## License
