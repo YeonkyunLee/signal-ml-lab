@@ -38,7 +38,7 @@ No proprietary data or algorithms from any company are included.
 - At **extreme noise (−10 dB) the advantage nearly vanishes** — an honest limit.
 - Wavelet thresholding adds almost nothing over bandpass+notch for this noise model.
 
-![benchmark](outputs/03_benchmark_snr.png)
+![benchmark](assets/03_benchmark_snr.png)
 
 ## Domain shift — the ML trap
 
@@ -60,7 +60,7 @@ Test the ML model (trained only on normal morphology) on a **different distribut
 Core lesson: *an ML edge is valid only inside the training distribution; always
 measure the **generalization tax** alongside it.*
 
-![domain shift](outputs/04_domain_shift.png)
+![domain shift](assets/04_domain_shift.png)
 
 ### Fix — mixed-distribution training
 
