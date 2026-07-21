@@ -29,7 +29,7 @@
 | **joint (E2E)** | **41.2%** | **84.8%** |
 | clean 상한 | 45.2% | 86.8% |
 
-![fixing the coupling](../outputs/13_joint_training.png)
+![fixing the coupling](../assets/13_joint_training.png)
 
 읽히는 이야기.
 

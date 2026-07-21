@@ -85,7 +85,7 @@ SNR을 쟀다.
 정성적으로도 같다. 고전 방법은 전 구간에 잔여 잡음을 남기는 반면, ML 출력은 깨끗한
 원본에 거의 겹쳐지고 P·T 파형까지 살아난다.
 
-![benchmark](../outputs/03_benchmark_snr.png)
+![benchmark](../assets/03_benchmark_snr.png)
 
 ## DSP 관점에서 정리하면
 

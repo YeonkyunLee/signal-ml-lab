@@ -17,7 +17,7 @@ clean 박동으로 학습된 것(9편)을 그대로 썼다.
 | 6 dB | 75.0% → 72.1% | 66.8% → 36.3% |
 | clean 상한 | 81.8% | 86.8% |
 
-![denoise then classify](../outputs/12_denoise_then_classify.png)
+![denoise then classify](../assets/12_denoise_then_classify.png)
 
 디노이징이 정확도를 **떨어뜨린다.** 그것도 하필 가장 중요한 곳에서 — 심실성 조기수축
 (PVC) 검출 recall이 **반토막** 난다.
@@ -33,7 +33,7 @@ PVC 박동**을 디노이저에만 통과시켜 봤다.
 노이즈가 없는데도 디노이저를 거치는 것만으로 PVC 검출이 무너진다. 형태를 보면 이유가
 보인다.
 
-![pvc morphology](../outputs/12_pvc_morphology.png)
+![pvc morphology](../assets/12_pvc_morphology.png)
 
 디노이저(주황)는 clean PVC(초록)의 비정상적으로 깊은 편향과 큰 반동을 **눌러 정상
 쪽으로 다듬는다.** SNR로 학습된 모델은 "평균적이고 정상적인 ECG 형태"를 배웠고, 낯선

@@ -18,7 +18,7 @@
 | 1000 | 8.78 dB | **9.09 dB** |
 | 8000 | 9.65 dB | 9.58 dB |
 
-![data efficiency](../outputs/09_finetune_curve.png)
+![data efficiency](../assets/09_finetune_curve.png)
 
 세 가지가 읽힌다.
 
@@ -46,7 +46,7 @@
 - **심실성 조기수축(PVC, V) recall 87%** — 임상적으로 중요한 이상 박동을 잘 잡는다
 - 그러나 희귀 클래스(S/F/Q)는 저조하다
 
-![confusion matrix](../outputs/10_arrhythmia_cm.png)
+![confusion matrix](../assets/10_arrhythmia_cm.png)
 
 혼동행렬을 보면 N과 V는 대각선에 잘 모이지만, S·F는 N·V로 흡수된다. 원인은 명백한
 **클래스 불균형**이다: 정상 박동이 3만 개인데 상심실성은 260개, 융합은 390개뿐.
@@ -70,7 +70,7 @@
 - 실데이터의 앙상블 불일치는 in-dist(합성)의 **3.0배**
 - 판별 **AUROC 0.96**, 5% 오탐 게이트로 실입력의 **80.7% 탐지**
 
-![real-data gate](../outputs/11_realdata_gate.png)
+![real-data gate](../assets/11_realdata_gate.png)
 
 의미는 크다. 4편에서 합성 모델은 실데이터에서 **조용히** 실패했다. 그런데 그 실패는
 **감지 가능**했다 — 배포 시스템에 이 게이트가 있었다면 실입력의 80.7%가 "믿을 수

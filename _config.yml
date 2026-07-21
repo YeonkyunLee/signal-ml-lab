@@ -1,0 +1,4 @@
+title: signal-ml-lab
+description: Denoising & diagnosing ECG with classical DSP vs ML — honest, reproducible.
+theme: jekyll-theme-cayman
+show_downloads: false

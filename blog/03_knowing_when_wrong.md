@@ -37,7 +37,7 @@ estimation)이다.
 |------|----------:|-------------:|
 | 딥 앙상블 (K=4) | **0.90** | **50%** |
 
-![uncertainty](../outputs/07_uncertainty.png)
+![uncertainty](../assets/07_uncertainty.png)
 
 히스토그램에서 OOD(주황)의 불일치 분포가 in-distribution(파랑)보다 뚜렷이 오른쪽에
 있다. 핵심 직관: **멤버들은 학습분포 안에서는 서로 동의하지만, 낯선 형태에서는 각자

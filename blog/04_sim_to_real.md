@@ -25,7 +25,7 @@
 | **ML (합성 학습)** | 4.09 dB | +1.26 |
 | **ML (실데이터 학습)** | **9.45 dB** | **+6.62** |
 
-![real data](../outputs/08_real_data.png)
+![real data](../assets/08_real_data.png)
 
 두 가지가 분명하다.
 
