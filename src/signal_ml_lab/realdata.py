@@ -75,38 +75,47 @@ _AAMI = {
 }
 
 
+def _load_ann_samples(rec: str) -> tuple[np.ndarray, list[str]]:
+    """주석(샘플 인덱스, 심볼)을 캐시. rdann은 최초 1회만 네트워크 사용."""
+    cache = _CACHE / f"ann_{rec}.npz"
+    if cache.exists():
+        d = np.load(cache, allow_pickle=True)
+        return d["sample"], list(d["symbol"])
+    wfdb = _wfdb()
+    ann = wfdb.rdann(rec, "atr", pn_dir="mitdb")
+    np.savez_compressed(cache, sample=np.asarray(ann.sample), symbol=np.array(ann.symbol))
+    return np.asarray(ann.sample), list(ann.symbol)
+
+
 def load_beats(
-    records, win: int = 256, lead: str = "MLII"
+    records, win: int = 256, lead: str = "MLII", normalize: bool = True
 ) -> tuple[np.ndarray, list[str]]:
     """R-피크 주석 기준으로 박동 윈도우를 잘라 (beats, AAMI 라벨)로 반환.
 
-    각 박동은 R-피크 중심 win 샘플, 개별 표준화(zero-mean/unit-std).
+    각 박동은 R-피크 중심 win 샘플. normalize=True면 zero-mean/unit-std(분류용),
+    False면 zero-mean만 유지(mV 스케일, 디노이저 입력용).
     """
     _CACHE.mkdir(exist_ok=True)
     half = win // 2
+    tag = "z" if normalize else "mv"
     beats, labels = [], []
     for rec in records:
-        cache = _CACHE / f"beats_{rec}_{win}.npz"
+        cache = _CACHE / f"beats_{rec}_{win}_{tag}.npz"
         if cache.exists():
             d = np.load(cache, allow_pickle=True)
             beats.append(d["beats"])
             labels.extend(list(d["labels"]))
             continue
-        wfdb = _wfdb()
-        r = wfdb.rdrecord(rec, pn_dir="mitdb")
-        ann = wfdb.rdann(rec, "atr", pn_dir="mitdb")
-        names = list(r.sig_name)
-        ch = names.index(lead) if lead in names else 0
-        sig = np.asarray(r.p_signal[:, ch], float)
+        sig, _ = _load_record(rec, "mitdb", lead)  # 캐시된 신호 재사용(재다운로드 없음)
+        samples, symbols = _load_ann_samples(rec)
         rec_beats, rec_labels = [], []
-        for s, sym in zip(ann.sample, ann.symbol):
+        for s, sym in zip(samples, symbols):
             cls = _AAMI.get(sym)
-            if cls is None:
+            if cls is None or s - half < 0 or s + half >= sig.size:
                 continue
-            if s - half < 0 or s + half >= sig.size:
-                continue
-            w = sig[s - half : s + half]
-            w = (w - w.mean()) / (w.std() + 1e-6)
+            w = sig[s - half : s + half] - sig[s - half : s + half].mean()
+            if normalize:
+                w = w / (w.std() + 1e-6)
             rec_beats.append(w.astype(np.float32))
             rec_labels.append(cls)
         rb = np.stack(rec_beats) if rec_beats else np.empty((0, win), np.float32)

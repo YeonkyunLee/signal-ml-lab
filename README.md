@@ -99,6 +99,37 @@ papers skip (`scripts/10_arrhythmia.py`).
 
 ![confusion matrix](assets/10_arrhythmia_cm.png)
 
+## When denoising *hurts* diagnosis (systems-level "clean but wrong")
+
+The obvious pipeline is denoise → classify. Does denoising a noisy beat recover the
+accuracy lost to noise? **No — it makes it worse** (`scripts/12_denoise_then_classify.py`).
+
+| input SNR | accuracy noisy → denoised | PVC recall noisy → denoised |
+|----------:|:--------------------------|:----------------------------|
+| 9 dB | 79.0% → **74.3%** | 74.2% → **41.7%** |
+| 6 dB | 75.0% → 72.1% | 66.8% → 36.3% |
+| clean upper bound | 81.8% | 86.8% |
+
+The damage is worst exactly where it matters — **PVC recall halves.** And it's not a
+noise artifact: passing *clean* PVC beats through the denoiser alone drops PVC recall
+**86.8% → 58.0%**.
+
+**Why:** a denoiser optimized for SNR learns the *average, normal* ECG shape and pulls
+everything toward it — attenuating the abnormal morphology that defines a PVC. It makes
+signals look cleaner and *more normal*, which is precisely wrong for spotting abnormal
+beats. (Two mechanisms compound: the denoiser flattens pathological features, and its
+outputs are themselves out-of-distribution for a clean-trained classifier.)
+
+![pvc morphology](assets/12_pvc_morphology.png)
+
+Lesson: **component-wise optimization doesn't compose.** Optimizing a denoiser for
+fidelity and a classifier for clean accuracy, then chaining them, degrades the whole.
+Pipelines need task-aware design — joint training, or a denoiser whose objective
+preserves diagnostic features, not just SNR. This is the project's thesis at the
+systems level: *a metric-optimal component can be objective-wrong for the system.*
+
+![denoise then classify](assets/12_denoise_then_classify.png)
+
 ## Domain shift — the ML trap
 
 Test the ML model (trained only on normal morphology) on a **different distribution**
@@ -226,6 +257,8 @@ blog/           write-ups (KR)
 - [x] Real-data validation: MIT-BIH ECG + NSTDB noise (sim-to-real gap quantified)
 - [x] Synthetic→real data-efficiency curve (pretraining prior)
 - [x] Arrhythmia classification (patient-independent, AAMI 5-class)
+- [x] Denoise→classify coupling: SNR-denoiser *hurts* diagnosis (systems finding)
+- [ ] Task-aware / joint denoise+classify training to fix the coupling
 - [ ] Address class imbalance (focal loss / resampling) for S/F recall
 - [ ] int8 static quantization + on-device benchmark
 
