@@ -174,6 +174,28 @@ on a single core (`scripts/14_edge_joint_profile.py`):
 
 ![edge joint](assets/14_edge_joint.png)
 
+## Selective diagnosis — knowing when to defer
+
+A deployed diagnostic system needn't auto-decide every beat. Defer the least-confident
+ones to a cardiologist and the auto-decided rest get more accurate. MC-dropout
+confidence on the classifier gives a risk-coverage curve (`scripts/15_selective_diagnosis.py`):
+
+| condition | 100% coverage | defer 20% → | defer 50% → |
+|-----------|--------------:|------------:|------------:|
+| clean | 90.1% | **95.8%** | 98.2% |
+| noisy (6 dB) | 86.5% | **92.7%** | 96.2% |
+
+- Deferring the ~20% least-confident beats lifts auto-decision accuracy to **93–96%** —
+  the safe-deployment lever: the system says *"unsure — send to a human."*
+- The gain is larger under noise, exactly when a safety net matters most.
+- (Side effect: averaging 30 MC-dropout passes acts as a mini-ensemble, lifting full
+  accuracy 81.8% → 90.1%.)
+
+![selective diagnosis](assets/15_selective_diagnosis.png)
+
+This unites the project's two threads — **diagnosis** and the **uncertainty gate** — into
+one deployable behavior: accurate where confident, deferring where not.
+
 ## Domain shift — the ML trap
 
 Test the ML model (trained only on normal morphology) on a **different distribution**
