@@ -156,6 +156,24 @@ under imbalance) and **PVC recall** (the clinical metric):
 Principle: *pipeline performance comes not from component quality but from aligning
 components with the system objective.*
 
+### And it still fits on the edge
+
+Accurate *and* deployable. The full diagnostic pipeline (denoise + classify) profiled
+on a single core (`scripts/14_edge_joint_profile.py`):
+
+| stage | params | KB (fp32/int8) | latency/beat | beats/s |
+|-------|-------:|---------------:|-------------:|--------:|
+| denoiser | 56k | 220 / 55 | 0.57 ms | 1745 |
+| classifier | 36k | 142 / 36 | 0.25 ms | 4070 |
+| **joint pipeline** | **93k** | **362 / 90** | **0.78 ms** | **1285** |
+
+- The whole denoise→classify chain runs at **1285 beats/s on one core — ~430× real-time**
+  (a heart beats ≤3/s). RTF 0.0011.
+- 93k params, 90 KB at int8 → realistic for an **always-on wearable** doing on-device
+  ECG diagnosis. DSP + ML + embedded, end to end.
+
+![edge joint](assets/14_edge_joint.png)
+
 ## Domain shift — the ML trap
 
 Test the ML model (trained only on normal morphology) on a **different distribution**
@@ -285,6 +303,7 @@ blog/           write-ups (KR)
 - [x] Arrhythmia classification (patient-independent, AAMI 5-class)
 - [x] Denoise→classify coupling: SNR-denoiser *hurts* diagnosis (systems finding)
 - [x] Task-aware joint training fixes the coupling (PVC recall 42→85%, both axes)
+- [x] Edge profile of full joint pipeline (~430× real-time, 90 KB int8)
 - [ ] Address class imbalance (focal loss / resampling) for S/F recall
 - [ ] int8 static quantization + on-device benchmark
 
