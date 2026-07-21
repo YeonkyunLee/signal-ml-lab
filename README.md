@@ -27,6 +27,8 @@ No proprietary data or algorithms from any company are included.
    (AUROC 0.90) flags OOD inputs so bad outputs are catchable.
 6. The model is tiny (**220 KB**, **1161× real-time** on one CPU core) → edge-deployable.
 
+📓 **Write-ups:** a 7-part blog series walks the whole arc — see [blog/00_index.md](blog/00_index.md).
+
 ## Results (synthetic test set, SNR sweep)
 
 | input SNR | classical (bp+notch) | ML (DnCNN1D) |
