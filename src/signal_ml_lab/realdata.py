@@ -65,6 +65,57 @@ def load_noise(kinds=("bw", "ma", "em")) -> dict[str, np.ndarray]:
     return noise
 
 
+# MIT-BIH 주석 심볼 → AAMI 5클래스 (N 정상, S 상심실성, V 심실성, F 융합, Q 미상)
+_AAMI = {
+    "N": "N", "L": "N", "R": "N", "e": "N", "j": "N",
+    "A": "S", "a": "S", "J": "S", "S": "S",
+    "V": "V", "E": "V",
+    "F": "F",
+    "/": "Q", "f": "Q", "Q": "Q",
+}
+
+
+def load_beats(
+    records, win: int = 256, lead: str = "MLII"
+) -> tuple[np.ndarray, list[str]]:
+    """R-피크 주석 기준으로 박동 윈도우를 잘라 (beats, AAMI 라벨)로 반환.
+
+    각 박동은 R-피크 중심 win 샘플, 개별 표준화(zero-mean/unit-std).
+    """
+    _CACHE.mkdir(exist_ok=True)
+    half = win // 2
+    beats, labels = [], []
+    for rec in records:
+        cache = _CACHE / f"beats_{rec}_{win}.npz"
+        if cache.exists():
+            d = np.load(cache, allow_pickle=True)
+            beats.append(d["beats"])
+            labels.extend(list(d["labels"]))
+            continue
+        wfdb = _wfdb()
+        r = wfdb.rdrecord(rec, pn_dir="mitdb")
+        ann = wfdb.rdann(rec, "atr", pn_dir="mitdb")
+        names = list(r.sig_name)
+        ch = names.index(lead) if lead in names else 0
+        sig = np.asarray(r.p_signal[:, ch], float)
+        rec_beats, rec_labels = [], []
+        for s, sym in zip(ann.sample, ann.symbol):
+            cls = _AAMI.get(sym)
+            if cls is None:
+                continue
+            if s - half < 0 or s + half >= sig.size:
+                continue
+            w = sig[s - half : s + half]
+            w = (w - w.mean()) / (w.std() + 1e-6)
+            rec_beats.append(w.astype(np.float32))
+            rec_labels.append(cls)
+        rb = np.stack(rec_beats) if rec_beats else np.empty((0, win), np.float32)
+        np.savez_compressed(cache, beats=rb, labels=np.array(rec_labels))
+        beats.append(rb)
+        labels.extend(rec_labels)
+    return np.concatenate(beats, axis=0), labels
+
+
 def add_real_noise(
     clean: np.ndarray, noise: np.ndarray, snr_db: float, rng: np.random.Generator
 ) -> np.ndarray:

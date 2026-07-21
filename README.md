@@ -65,6 +65,40 @@ artifact, electrode motion) added at controlled SNR (`scripts/08_real_data.py`).
 
 ![real data](assets/08_real_data.png)
 
+### Resolution — synthetic as a pretraining prior
+
+Synthetic data isn't useless — it's a **cheap pretraining prior** that makes real-data
+learning far more data-efficient (`scripts/09_finetune_curve.py`).
+
+| # real windows | from scratch | synthetic-pretrained |
+|---------------:|-------------:|---------------------:|
+| 100 | 7.47 dB | **8.23 dB** |
+| 300 | 7.96 dB | **8.71 dB** |
+| 1000 | 8.78 dB | **9.09 dB** |
+| 8000 | 9.65 dB | 9.58 dB |
+
+- **Just 100 real windows already beat classical (6.70 dB)** and crush synthetic-only (4.09).
+- Synthetic pretraining helps most in the **low-data regime** (+0.75 dB at N=100–300);
+  the gap closes once real data is plentiful.
+- So the full sim-to-real story: *synthetic alone doesn't transfer, but as a pretraining
+  prior it cuts the real-data budget several-fold.*
+
+![data efficiency](assets/09_finetune_curve.png)
+
+## Beyond denoising — arrhythmia classification
+
+A denoiser is a means; diagnosis is an end. Using MIT-BIH beat annotations, a small
+1D-CNN (36k params) classifies each beat into the 5 AAMI classes (N/S/V/F/Q), with a
+**patient-independent** train/test split (different records) — the honest setting many
+papers skip (`scripts/10_arrhythmia.py`).
+
+- Overall accuracy **81.8%** on ~33k held-out beats from unseen patients.
+- **PVC (V) detection: 87% recall** — the clinically important abnormal beat is caught well.
+- Rare classes (S/F/Q) are hard: severe class imbalance (N ≈ 30k vs S ≈ 260, F ≈ 390).
+  An honest limitation, not hidden by patient-mixed evaluation.
+
+![confusion matrix](assets/10_arrhythmia_cm.png)
+
 ## Domain shift — the ML trap
 
 Test the ML model (trained only on normal morphology) on a **different distribution**
@@ -120,6 +154,15 @@ model flag its own OOD inputs? Two methods, one test (in-dist vs. variant):
 
 ![uncertainty](assets/07_uncertainty.png)
 
+**Does the gate catch the real sim-to-real failure?** Yes. A synthetic-trained
+ensemble flags **real** MIT-BIH data as OOD with **AUROC 0.96** — real-data
+disagreement is 3.0× the in-distribution level, and the 5%-FPR gate catches **80.7%**
+of real inputs (`scripts/11_realdata_gate.py`). So the silent failure of the
+synthetic model on real data (above) would have been **caught in deployment** and
+routed to the classical fallback.
+
+![real-data gate](assets/11_realdata_gate.png)
+
 ## Edge deployability (embedded)
 
 Can the denoiser run in real time? (`scripts/06_edge_profile.py`, single thread)
@@ -148,6 +191,9 @@ python scripts/05_mixed_training.py                    # recover robustness
 python scripts/06_edge_profile.py                      # latency / footprint
 python scripts/07_uncertainty.py                       # ensemble OOD safety gate
 python scripts/08_real_data.py --train-real            # real MIT-BIH + NSTDB noise
+python scripts/09_finetune_curve.py                    # sim-to-real data efficiency
+python scripts/10_arrhythmia.py                        # beat classification (patient-independent)
+python scripts/11_realdata_gate.py                     # ensemble flags real data as OOD
 
 pytest -q
 ```
@@ -178,7 +224,9 @@ blog/           write-ups (KR)
 - [x] Edge profile, unit tests
 - [x] Uncertainty as OOD safety gate (deep ensemble, AUROC 0.90)
 - [x] Real-data validation: MIT-BIH ECG + NSTDB noise (sim-to-real gap quantified)
-- [ ] Fine-tune synthetic→real (domain adaptation) vs train-from-scratch
+- [x] Synthetic→real data-efficiency curve (pretraining prior)
+- [x] Arrhythmia classification (patient-independent, AAMI 5-class)
+- [ ] Address class imbalance (focal loss / resampling) for S/F recall
 - [ ] int8 static quantization + on-device benchmark
 
 ## License

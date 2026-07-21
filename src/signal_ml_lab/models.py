@@ -41,3 +41,27 @@ class DnCNN1D(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         noise = self.net(x)
         return x - noise  # 잔차: 입력에서 추정 노이즈를 뺌
+
+
+class ECGBeatClassifier(nn.Module):
+    """1D CNN 심박 분류기 (AAMI 클래스).
+
+    입력 (batch, 1, win) → 클래스 로짓 (batch, n_classes).
+    """
+
+    def __init__(self, n_classes: int = 5, channels: int = 32, win: int = 256):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv1d(1, channels, 7, padding=3), nn.BatchNorm1d(channels), nn.ReLU(),
+            nn.MaxPool1d(2),  # win/2
+            nn.Conv1d(channels, channels * 2, 5, padding=2), nn.BatchNorm1d(channels * 2), nn.ReLU(),
+            nn.MaxPool1d(2),  # win/4
+            nn.Conv1d(channels * 2, channels * 4, 3, padding=1), nn.BatchNorm1d(channels * 4), nn.ReLU(),
+            nn.AdaptiveAvgPool1d(1),  # 전역 평균 풀링
+        )
+        self.head = nn.Sequential(
+            nn.Flatten(), nn.Dropout(0.3), nn.Linear(channels * 4, n_classes)
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.head(self.features(x))
