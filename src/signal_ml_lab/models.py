@@ -65,3 +65,24 @@ class ECGBeatClassifier(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.head(self.features(x))
+
+
+class JointDenoiseClassify(nn.Module):
+    """디노이저 → 분류기 end-to-end. 과제 인식 공동학습용.
+
+    forward는 (로짓, 디노이즈 신호)를 반환. 분류 손실 + (선택)재구성 손실로 함께 학습해
+    디노이저가 진단 특징을 보존하도록 유도한다.
+    """
+
+    def __init__(self, denoiser: nn.Module, classifier: nn.Module):
+        super().__init__()
+        self.denoiser = denoiser
+        self.classifier = classifier
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        den = self.denoiser(x)
+        # 분류기 입력을 per-sample 표준화(스케일 불변성) — 미분 가능
+        m = den.mean(dim=2, keepdim=True)
+        s = den.std(dim=2, keepdim=True) + 1e-6
+        logits = self.classifier((den - m) / s)
+        return logits, den

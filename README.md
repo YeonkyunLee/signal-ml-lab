@@ -130,6 +130,32 @@ systems level: *a metric-optimal component can be objective-wrong for the system
 
 ![denoise then classify](assets/12_denoise_then_classify.png)
 
+### Fixing it — task-aware / joint training
+
+If the problem is objective misalignment, align the objective. Three fixes tested
+(`scripts/13_joint_training.py`), scored on **balanced accuracy** (macro-recall, fair
+under imbalance) and **PVC recall** (the clinical metric):
+
+| method (input 9 dB) | balanced acc | PVC recall |
+|---------------------|-------------:|-----------:|
+| naive (noisy→clean clf) | 41.1% | 73.0% |
+| broken (denoise→clean clf) | 35.7% | 42.4% |
+| noise-aware classifier | 35.7% | 84.6% |
+| **joint (end-to-end)** | **41.2%** | **84.8%** |
+| clean upper bound | 45.2% | 86.8% |
+
+- **Only end-to-end joint training reaches near-clean on *both* axes** — PVC recall
+  42% → 85%, without sacrificing balanced accuracy.
+- Noise-aware training fixes PVC recall but over-triggers (balanced acc no better than
+  broken). Denoising-then-classify (broken) is worst on both.
+- Same architecture, same data — only the *objective alignment* changed. That alone
+  turned 42% into 85%.
+
+![fixing the coupling](assets/13_joint_training.png)
+
+Principle: *pipeline performance comes not from component quality but from aligning
+components with the system objective.*
+
 ## Domain shift — the ML trap
 
 Test the ML model (trained only on normal morphology) on a **different distribution**
@@ -258,7 +284,7 @@ blog/           write-ups (KR)
 - [x] Synthetic→real data-efficiency curve (pretraining prior)
 - [x] Arrhythmia classification (patient-independent, AAMI 5-class)
 - [x] Denoise→classify coupling: SNR-denoiser *hurts* diagnosis (systems finding)
-- [ ] Task-aware / joint denoise+classify training to fix the coupling
+- [x] Task-aware joint training fixes the coupling (PVC recall 42→85%, both axes)
 - [ ] Address class imbalance (focal loss / resampling) for S/F recall
 - [ ] int8 static quantization + on-device benchmark
 
