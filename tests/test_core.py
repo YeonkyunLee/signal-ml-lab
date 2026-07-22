@@ -39,6 +39,32 @@ def test_metrics_perfect_reconstruction():
     assert np.isinf(metrics.snr_db(clean, clean))
 
 
+def test_focal_loss_and_oversample():
+    import importlib.util
+
+    root = Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location("imb16", root / "scripts" / "16_imbalance.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    import torch
+
+    # focal loss: 잘 맞춘 예측의 손실이 애매한 예측보다 작아야 함
+    fl = mod.FocalLoss(gamma=2.0)
+    confident = torch.tensor([[5.0, -5.0, -5.0, -5.0, -5.0]])
+    unsure = torch.tensor([[0.2, 0.1, 0.0, 0.0, 0.0]])
+    tgt = torch.tensor([0])
+    assert fl(confident, tgt).item() < fl(unsure, tgt).item()
+
+    # 오버샘플링: 소수 클래스가 증강 복제돼 균형에 가까워짐
+    rng = np.random.default_rng(0)
+    x = rng.standard_normal((110, 256)).astype(np.float32)
+    y = np.array([0] * 100 + [1] * 8 + [2] * 2)
+    xb, yb = mod.oversample_augment(x, y, rng)
+    counts = np.bincount(yb)
+    assert counts.min() > 8  # 소수 클래스가 늘어남
+    assert xb.shape[0] == yb.shape[0]
+
+
 def test_auroc_separation():
     rng = np.random.default_rng(0)
     neg = rng.normal(0, 1, 500)

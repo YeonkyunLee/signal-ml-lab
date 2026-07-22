@@ -101,6 +101,31 @@ papers skip (`scripts/10_arrhythmia.py`).
 
 ![confusion matrix](assets/10_arrhythmia_cm.png)
 
+## Class imbalance — match the task to what the data supports
+
+The 5-class beat classifier's weak point is the rare classes (S/F/Q). Do standard
+imbalance fixes rescue them? (`scripts/16_imbalance.py`, patient-independent)
+
+| method | balanced acc | macro-F1 | S recall | F recall |
+|--------|-------------:|---------:|---------:|---------:|
+| weighted-CE | 38.7% | 26.6% | 18% | 10% |
+| focal loss | 38.7% | 31.4% | 12% | 5% |
+| focal + oversample + augment | 38.5% | 38.0% | 9% | 0% |
+
+- **Off-the-shelf fixes don't move balanced accuracy.** Focal/oversampling raise macro-F1
+  (fewer false positives) but rare-class *recall drops* — a see-saw, not a solution.
+- Why: under a **patient-independent** split, test S/F/Q beats come from unseen patients
+  whose morphology differs; shallow augmentation can't synthesize that diversity.
+- **Constructive answer — reframe the task.** The clinically primary question is binary:
+  *is this beat abnormal?* That's far more learnable:
+
+  > **Binary abnormal detection: sensitivity 77%, specificity 92%, AUROC 0.918.**
+
+- Lesson: **match task granularity to what the data supports.** Fine subtyping needs more
+  diverse data (or patient adaptation); binary screening is deployable now.
+
+![imbalance](assets/16_imbalance.png)
+
 ## When denoising *hurts* diagnosis (systems-level "clean but wrong")
 
 The obvious pipeline is denoise → classify. Does denoising a noisy beat recover the
@@ -293,6 +318,11 @@ python scripts/08_real_data.py --train-real            # real MIT-BIH + NSTDB no
 python scripts/09_finetune_curve.py                    # sim-to-real data efficiency
 python scripts/10_arrhythmia.py                        # beat classification (patient-independent)
 python scripts/11_realdata_gate.py                     # ensemble flags real data as OOD
+python scripts/12_denoise_then_classify.py             # denoise→classify coupling (hurts!)
+python scripts/13_joint_training.py                    # task-aware joint training (fixes it)
+python scripts/14_edge_joint_profile.py                # full pipeline edge profile
+python scripts/15_selective_diagnosis.py               # selective diagnosis (risk-coverage)
+python scripts/16_imbalance.py                         # class imbalance + binary detection
 
 pytest -q
 ```
@@ -328,7 +358,7 @@ blog/           write-ups (KR)
 - [x] Denoise→classify coupling: SNR-denoiser *hurts* diagnosis (systems finding)
 - [x] Task-aware joint training fixes the coupling (PVC recall 42→85%, both axes)
 - [x] Edge profile of full joint pipeline (~430× real-time, 90 KB int8)
-- [ ] Address class imbalance (focal loss / resampling) for S/F recall
+- [x] Class-imbalance study (focal/oversample) + binary abnormal detection (AUROC 0.92)
 - [ ] int8 static quantization + on-device benchmark
 
 ## License
