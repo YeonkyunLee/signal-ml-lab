@@ -101,6 +101,28 @@ papers skip (`scripts/10_arrhythmia.py`).
 
 ![confusion matrix](assets/10_arrhythmia_cm.png)
 
+## Which noise favors which method? (a DSP insight)
+
+Breaking real-data denoising down by NSTDB noise type reveals *when* ML beats classical
+(`scripts/17_noise_breakdown.py`):
+
+| real noise type | classical gain | ML gain | winner |
+|-----------------|---------------:|--------:|--------|
+| baseline wander (low-freq, separable) | +6.71 dB | +6.79 dB | ~tie |
+| muscle artifact (broadband, overlaps QRS) | +3.62 dB | +5.93 dB | ML +2.3 |
+| electrode motion (transients, worst) | +0.77 dB | +4.95 dB | **ML +4.2** |
+
+- **The less spectrally separable the noise, the bigger ML's edge.** Baseline wander is
+  low-frequency, so a classical high-pass removes it about as well as ML (tie). Muscle
+  artifact and electrode motion overlap the signal band — classical can't filter them
+  without hurting the QRS, but ML uses learned morphology.
+- Classical even goes **negative** on electrode motion at 8 dB (it *adds* error), while ML
+  stays strongly positive.
+- Takeaway for a DSP engineer: reach for ML exactly where **linear, frequency-domain
+  separation breaks down** — that's where the learned prior pays off.
+
+![noise breakdown](assets/17_noise_breakdown.png)
+
 ## Class imbalance — match the task to what the data supports
 
 The 5-class beat classifier's weak point is the rare classes (S/F/Q). Do standard
@@ -323,6 +345,7 @@ python scripts/13_joint_training.py                    # task-aware joint traini
 python scripts/14_edge_joint_profile.py                # full pipeline edge profile
 python scripts/15_selective_diagnosis.py               # selective diagnosis (risk-coverage)
 python scripts/16_imbalance.py                         # class imbalance + binary detection
+python scripts/17_noise_breakdown.py                   # which noise favors classical vs ML
 
 pytest -q
 ```

@@ -73,6 +73,27 @@ def test_auroc_separation():
     assert abs(metrics.auroc(neg, neg) - 0.5) < 0.05  # 같은 분포면 ~0.5
 
 
+def test_noise_breakdown_ml_edge_grows():
+    # ML 우위가 bw(분리가능) < em(겹침) 순으로 커져야 함 (DSP 통찰)
+    import importlib.util
+
+    root = Path(__file__).resolve().parents[1]
+    if not (root / "outputs" / "dncnn1d_real.pt").exists():
+        import pytest
+
+        pytest.skip("real-trained denoiser 없음 (먼저 08_real_data --train-real 실행)")
+    spec = importlib.util.spec_from_file_location("nb17", root / "scripts" / "17_noise_breakdown.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    rows = mod.main()
+    adv = {}
+    for nk, snr, gc, gm in rows:
+        adv.setdefault(nk, []).append(gm - gc)
+    import numpy as _np
+
+    assert _np.mean(adv["em"]) > _np.mean(adv["bw"])  # em에서 ML 우위가 더 큼
+
+
 def test_synth_variant_differs():
     _, base = synth.synth_ecg(duration_s=5.0, fs=360, hr_bpm=75, seed=0)
     _, var = synth.synth_ecg_variant(duration_s=5.0, fs=360, hr_bpm=75, seed=0)
