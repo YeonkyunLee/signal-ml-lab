@@ -171,6 +171,14 @@ outputs are themselves out-of-distribution for a clean-trained classifier.)
 
 ![pvc morphology](assets/12_pvc_morphology.png)
 
+**Does the damage scale with task granularity?** Yes (`scripts/18_denoise_binary.py`).
+Repeating the test for the *coarser* binary abnormal-detection task, denoising still
+hurts — but only mildly (AUROC −0.02 across all SNRs, no crossover) vs the ~29-point PVC
+recall collapse in 5-class. The SNR denoiser's morphology damage harms *any* downstream
+discrimination, in proportion to how much fine morphology the task needs.
+
+![denoise binary](assets/18_denoise_binary.png)
+
 Lesson: **component-wise optimization doesn't compose.** Optimizing a denoiser for
 fidelity and a classifier for clean accuracy, then chaining them, degrades the whole.
 Pipelines need task-aware design — joint training, or a denoiser whose objective
@@ -346,6 +354,7 @@ python scripts/14_edge_joint_profile.py                # full pipeline edge prof
 python scripts/15_selective_diagnosis.py               # selective diagnosis (risk-coverage)
 python scripts/16_imbalance.py                         # class imbalance + binary detection
 python scripts/17_noise_breakdown.py                   # which noise favors classical vs ML
+python scripts/18_denoise_binary.py                    # does denoising help binary detection?
 
 pytest -q
 ```
